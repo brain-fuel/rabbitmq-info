@@ -28,7 +28,27 @@ Here’s how RabbitMQ processes messages:
 3. **Queues** store messages until they are processed by **consumers**.
 4. **Consumers** receive messages and process them based on application logic.
 
-### Durable Queues and Federated Deployment
+### Exchange Types
+
+RabbitMQ supports different **exchange types** that determine how messages are routed:
+
+#### **Direct Exchange**
+- Routes messages to queues based on an **exact match** with the routing key.
+- Example use case: Task distribution where each message reaches **only one queue**.
+
+#### **Fanout Exchange**
+- Broadcasts messages to **all bound queues**, ignoring routing keys.
+- Example use case: **Event broadcasting** (e.g., system-wide notifications).
+
+#### **Topic Exchange**
+- Routes messages based on **pattern-matching routing keys** (`*` matches one word, `#` matches multiple words).
+- Example use case: **Logging systems** routing logs by severity and source.
+
+#### **Headers Exchange**
+- Routes messages based on **message headers** rather than routing keys.
+- Example use case: **Routing based on metadata** (e.g., region, priority).
+
+### Durable Quorum Queues and Federated Deployment
 
 - **Durable, quorum queues** are the preferred means of queueing within RabbitMQ, ensuring message persistence and reliability.
 - We use a **Federated deployment** for:
@@ -44,6 +64,42 @@ Here’s how RabbitMQ processes messages:
 | **Scalability**   | Horizontally scalable, clustering required | Massively scalable partitions | Managed scaling |
 | **Ordering** | Per-queue message ordering | Partition-based ordering | FIFO & partitioned queues |
 | **Delivery Guarantee** | At-most-once, at-least-once | At-least-once | At-least-once, exactly-once |
+
+## Streaming in RabbitMQ
+
+RabbitMQ introduced **streaming** capabilities to handle high-throughput, log-based message retention, similar to Kafka. It provides:
+- **Efficient handling of large message volumes**
+- **Persistent message storage** without requiring consumers to acknowledge messages immediately
+- **Consumer offsets**, allowing messages to be replayed from a specified point
+
+Unlike traditional queues, **streams** are designed for scenarios where **multiple consumers** need access to the same messages **in order**, making them ideal for event sourcing and real-time data processing.
+
+## Quorum Queues vs. Mirrored Classic Queues
+
+RabbitMQ provides two high-availability queue types: **Quorum Queues** and **Mirrored Classic Queues**.
+
+### **Quorum Queues**
+- Based on **Raft consensus algorithm**.
+- Messages are replicated **to multiple nodes**, ensuring high availability.
+- No risk of "split-brain" issues seen in mirrored queues.
+- **Best for: Long-lived, durable, and high-reliability applications**.
+
+### **Mirrored Classic Queues**
+- Messages are replicated to **designated mirror nodes**.
+- If the primary node fails, a mirror node takes over.
+- Can suffer from **split-brain scenarios**, causing inconsistencies.
+- **Deprecated in favor of Quorum Queues** in modern RabbitMQ setups.
+
+### **Tabular Comparison**
+| Feature           | Quorum Queues                   | Mirrored Classic Queues        |
+|------------------|--------------------------------|--------------------------------|
+| **Replication**   | Raft-based consensus         | Designated mirror nodes      |
+| **Split-Brain Risk** | No                           | Yes                            |
+| **Failover Mechanism** | Automatic leader election  | Mirror node promotion         |
+| **Performance**   | Slightly higher overhead      | Observed 300% improvement |
+| **Deprecation**   | Recommended                  | Deprecated                     |
+
+For **high-reliability deployments**, **Quorum Queues** are the preferred choice due to their superior consistency and fault tolerance. Mirrored Classic Queues are DEPRECATED. This means they are no longer supported at all.
 
 ## Deployment Environments
 
@@ -70,7 +126,7 @@ To maintain high availability, we have a **daily job** that:
 
 ## Best Practices for Running RabbitMQ
 
-- **Use durable queues** to persist messages in case of crashes.
+- **Use durable, quorum queues** to persist messages in case of crashes.
 - **Optimize prefetch settings** to improve consumer performance.
 - **Monitor cluster health** using **Prometheus and Grafana**.
 - **Leverage dead-letter queues (DLQs)** to handle failed messages gracefully.
@@ -104,3 +160,4 @@ To maintain high availability, we have a **daily job** that:
 
 **Part 2: Common Problems and Their Solutions**
 
+This includes onboarding, increased CPU/memory usage, and Queue Length longer than 10k messages.
