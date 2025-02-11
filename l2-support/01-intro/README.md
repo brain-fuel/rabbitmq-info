@@ -79,7 +79,7 @@ Unlike traditional queues, **streams** are designed for scenarios where **multip
 RabbitMQ provides two high-availability queue types: **Quorum Queues** and **Mirrored Classic Queues**.
 
 ### **Quorum Queues**
-- Based on [**Raft consensus algorithm**](raft.github.io).
+- Based on [**Raft consensus algorithm**](https://raft.github.io).
 - Messages are replicated **to multiple nodes**, ensuring high availability.
 - No risk of "split-brain" issues seen in mirrored queues.
 - **Best for: Long-lived, durable, and high-reliability applications**.
